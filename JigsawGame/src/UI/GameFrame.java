@@ -6,14 +6,24 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.net.URL;
 import java.util.Random;
 
 public class GameFrame extends JFrame implements KeyListener {
     //创建一个二维数组，用于存储图片序号
-    int[][] date = new int[4][4];
+    int[][] data = new int[4][4];
     //定义两个变量，用于记录空白块的位置
     int x = 0;
     int y = 0;
+    //定义一个变量，用于记录游戏图片路径
+    String imagePath = "JigsawGame/image/ACG/ACG01/";
+    //定义一个二维数组，用于记录完整图片的胜利状态
+    int[][] winData = new int[][]{
+            {1,2,3,4},
+            {5,6,7,8},
+            {9,10,11,12},
+            {13,14,15,16}
+    };
 
     public GameFrame() {
         //初始化游戏窗口
@@ -101,7 +111,7 @@ public class GameFrame extends JFrame implements KeyListener {
                     x = i;
                     y = j;
                 }
-                date[i][j] = temArr[i*4+j];
+                data[i][j] = temArr[i*4+j];
             }
         }
     }
@@ -120,16 +130,25 @@ public class GameFrame extends JFrame implements KeyListener {
         //清空原本的图片
         this.getContentPane().removeAll();
 
+        //判断是否胜利
+        if(victory()){
+
+            //显示胜利图片
+            JLabel winImage = new JLabel(new ImageIcon("JigsawGame/image/sport/win.jpg"));
+            winImage.setBounds(45,65,510,550);
+            this.getContentPane().add(winImage);
+        }
+
         //加载图片
         for(int i = 0; i<4; i++){
             for (int j = 0; j<4; j++){
                 //获取当前图片序号
-                int number = date[i][j];
+                int number = data[i][j];
 
                 //根据图片序号加载图片
                 if(number < 10){
                 //加载01.jpg-09.jpg
-                JLabel imageLabel = new JLabel(new ImageIcon("JigsawGame/image/ACG/ACG01/0"+number+".jpg"));
+                JLabel imageLabel = new JLabel(new ImageIcon(imagePath+"0"+number+".jpg"));
                 //设置图片imageLabel的位置
                 imageLabel.setBounds(105*j+91,105*i+130,105,105);
                 //给图片添加边框
@@ -140,7 +159,7 @@ public class GameFrame extends JFrame implements KeyListener {
                 this.getContentPane().add(imageLabel);
                 }else if(number <= 15){
                 //加载10.jpg-15.jpg
-                JLabel imageLabel = new JLabel(new ImageIcon("JigsawGame/image/ACG/ACG01/"+number+".jpg"));
+                JLabel imageLabel = new JLabel(new ImageIcon(imagePath+number+".jpg"));
                 //设置图片imageLabel的位置
                 imageLabel.setBounds(105*j+91,105*i+130,105,105);
                 //给图片添加边框
@@ -169,66 +188,120 @@ public class GameFrame extends JFrame implements KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-
+        //按住大写A键，显示完整图片
+        //A:VK_A = 65
+        if(e.getKeyCode() == KeyEvent.VK_A){
+            //判断是否按住大写A键
+            System.out.println("按住了大写A键,显示完整图片");
+            //删除所有图片
+            this.getContentPane().removeAll();
+            //加载完整图片
+            JLabel all = new JLabel(new ImageIcon(imagePath+"all.jpg"));
+            //设置完整图片的位置
+            all.setBounds(91,130,420,420);
+            //添加完整图片到窗口
+            this.getContentPane().add(all);
+            //添加背景图片
+            JLabel background = new JLabel(new ImageIcon("JigsawGame/image/sport/background.jpg"));
+            //设置背景图片的位置
+            background.setBounds(0,0,603,680);
+            //添加背景图片到窗口
+            this.getContentPane().add(background);
+            //刷新窗口
+            this.getContentPane().repaint();
+        }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
+        //胜利判定
+        if(victory()){
+            return;
+        }
+
         //判断上下左右方向键是否被按下
         //左：VK_LEFT = 37，上：VK_UP = 38，右：VK_RIGHT = 39，下：VK_DOWN = 40
         int keyCode = e.getKeyCode();
         if(keyCode == KeyEvent.VK_LEFT){
-            System.out.println("点击了左键");
+            System.out.println("点击了左键,向左移动");
             //判断是否可以向左移动
             if(y == 3){
                 return;
             }
             //空白块儿右方图片的数字赋值给空白块儿
-            date[x][y] = date[x][y+1];
-            date[x][y+1] = 16;
+            data[x][y] = data[x][y+1];
+            data[x][y+1] = 16;
             //更新空白块儿的角标
             y++;
             //刷新图片
             initImage();
         }else if(keyCode == KeyEvent.VK_UP){
-            System.out.println("点击了上键");
+            System.out.println("点击了上键,向上移动");
             //判断是否可以向上移动
             if(x == 3){
                 return;
             }
             //空白块儿下方图片的数字赋值给空白块儿
-            date[x][y] = date[x+1][y];
-            date[x+1][y] = 16;
+            data[x][y] = data[x+1][y];
+            data[x+1][y] = 16;
             //更新空白块儿的角标
             x++;
             //刷新图片
             initImage();
         }else if(keyCode == KeyEvent.VK_RIGHT){
-            System.out.println("点击了右键");
+            System.out.println("点击了右键,向右移动");
             //判断是否可以向右移动
             if(y == 0){
                 return;
             }
             //空白块儿左方图片的数字赋值给空白块儿
-            date[x][y] = date[x][y-1];
-            date[x][y-1] = 16;
+            data[x][y] = data[x][y-1];
+            data[x][y-1] = 16;
             //更新空白块儿的角标
             y--;
             //刷新图片
             initImage();
         }else if(keyCode == KeyEvent.VK_DOWN){
-            System.out.println("点击了下键");
+            System.out.println("点击了下键,向下移动");
             //判断是否可以向下移动
             if(x == 0){
                 return;
             }
             //空白块儿上方图片的数字赋值给空白块儿
-            date[x][y] = date[x-1][y];
-            date[x-1][y] = 16;
+            data[x][y] = data[x-1][y];
+            data[x-1][y] = 16;
             //更新空白块儿的角标
             x--;
             //刷新图片
             initImage();
+        }else if (keyCode == KeyEvent.VK_A){
+            //恢复图片
+            System.out.println("松开了A键,恢复图片");
+            initImage();
+        }else if (keyCode == KeyEvent.VK_W){
+            //松开W键，直接胜利，W:VK_W = 87
+            System.out.println("松开了W键,直接胜利");
+            //将data数组重置为完整图片的胜利状态
+            data = new int[][]{
+                    {1,2,3,4},
+                    {5,6,7,8},
+                    {9,10,11,12},
+                    {13,14,15,16}
+            };
+            //刷新图片
+            initImage();
         }
+    }
+
+    public boolean victory(){
+        //判断是否胜利
+        for(int i = 0;i<4;i++){
+            for(int j = 0;j<4;j++){
+                if(data[i][j] != winData[i][j]){
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
