@@ -134,7 +134,7 @@ public class GameFrame extends JFrame implements KeyListener {
         if(victory()){
 
             //显示胜利图片
-            JLabel winImage = new JLabel(new ImageIcon("JigsawGame/image/sport/win.jpg"));
+            JLabel winImage = new JLabel(new ImageIcon("JigsawGame/image/sport/win.png"));
             winImage.setBounds(45,65,510,550);
             this.getContentPane().add(winImage);
         }
