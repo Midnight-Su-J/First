@@ -1,9 +1,12 @@
 package UI;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 public class RegisterFrame extends JFrame implements ActionListener {
 
@@ -23,7 +26,13 @@ public class RegisterFrame extends JFrame implements ActionListener {
 
     private void initJFrame() {
         this.setTitle("注册");
-        this.setIconImage(Toolkit.getDefaultToolkit().getImage("JigsawGame/image/sport/Icon.png"));
+        BufferedImage frameIconBuf = null;
+        try {
+            frameIconBuf = ImageIO.read(GameFrame.class.getResourceAsStream("/JigsawGame/image/sport/Icon.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        this.setIconImage(frameIconBuf);
         this.setSize(488, 500);
         //取消默认布局管理器
         this.setLayout(null);
@@ -92,7 +101,13 @@ public class RegisterFrame extends JFrame implements ActionListener {
         this.add(register);
 
         //背景图片
-        JLabel background = new JLabel(new ImageIcon("JigsawGame/image/sport/background.jpg"));
+        BufferedImage bgBuf = null;
+        try {
+            bgBuf = ImageIO.read(GameFrame.class.getResourceAsStream("/JigsawGame/image/sport/background.jpg"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        JLabel background = new JLabel(new ImageIcon(bgBuf));
         background.setBounds(0, 0, 488, 500);
         this.getContentPane().add(background);
 

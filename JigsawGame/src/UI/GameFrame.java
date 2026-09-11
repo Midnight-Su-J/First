@@ -1,5 +1,6 @@
 package UI;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import java.awt.*;
@@ -7,6 +8,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Random;
 
 public class GameFrame extends JFrame implements KeyListener, ActionListener {
@@ -59,7 +63,16 @@ public class GameFrame extends JFrame implements KeyListener, ActionListener {
         //设置窗口标题
         this.setTitle("拼图游戏");
         //设置窗口图标
-        this.setIconImage(Toolkit.getDefaultToolkit().getImage("JigsawGame/image/sport/Icon.png"));
+        BufferedImage iconImage = null;
+        try {
+            InputStream is = GameFrame.class.getResourceAsStream("/JigsawGame/image/sport/Icon.png");
+            if(is != null){
+                iconImage = ImageIO.read(is);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        this.setIconImage(iconImage);
         //设置窗口大小
         this.setSize(603,680);
         //设置窗口置顶
@@ -162,7 +175,13 @@ public class GameFrame extends JFrame implements KeyListener, ActionListener {
         if(victory()){
 
             //显示胜利图片
-            JLabel winImage = new JLabel(new ImageIcon("JigsawGame/image/sport/win.png"));
+            BufferedImage winBuf = null;
+            try {
+                winBuf = ImageIO.read(GameFrame.class.getResourceAsStream("/JigsawGame/image/sport/win.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            JLabel winImage = new JLabel(new ImageIcon(winBuf));
             winImage.setBounds(45,65,510,550);
             this.getContentPane().add(winImage);
         }
@@ -185,8 +204,14 @@ public class GameFrame extends JFrame implements KeyListener, ActionListener {
                 //根据图片序号加载图片
                 if(number < 10){
                 //加载01.jpg-09.jpg
-                JLabel imageLabel = new JLabel(new ImageIcon(imagePath+"0"+number+".jpg"));
-                //设置图片imageLabel的位置
+                    BufferedImage buf = null;
+                    try {
+                        buf = ImageIO.read(GameFrame.class.getResourceAsStream("/" + imagePath + "0" + number + ".jpg"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    JLabel imageLabel = new JLabel(new ImageIcon(buf));
+                    //设置图片imageLabel的位置
                 imageLabel.setBounds(105*j+91,105*i+130,105,105);
                 //给图片添加边框
                 //RAISED = 0：凸起边框
@@ -196,8 +221,15 @@ public class GameFrame extends JFrame implements KeyListener, ActionListener {
                 this.getContentPane().add(imageLabel);
                 }else if(number <= 15){
                 //加载10.jpg-15.jpg
-                JLabel imageLabel = new JLabel(new ImageIcon(imagePath+number+".jpg"));
-                //设置图片imageLabel的位置
+                    BufferedImage buf = null;
+                    try {
+                        buf = ImageIO.read(GameFrame.class.getResourceAsStream("/" + imagePath + number + ".jpg"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    JLabel imageLabel = new JLabel(new ImageIcon(buf));
+
+                    //设置图片imageLabel的位置
                 imageLabel.setBounds(105*j+91,105*i+130,105,105);
                 //给图片添加边框
                 //RAISED = 0：凸起边框
@@ -210,7 +242,14 @@ public class GameFrame extends JFrame implements KeyListener, ActionListener {
         }
 
         //添加背景图片
-        JLabel background = new JLabel(new ImageIcon("JigsawGame/image/sport/background.jpg"));
+        BufferedImage bgBuf = null;
+        try {
+            bgBuf = ImageIO.read(GameFrame.class.getResourceAsStream("/JigsawGame/image/sport/background.jpg"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        JLabel background = new JLabel(new ImageIcon(bgBuf));
+        //设置背景图片的位置
         background.setBounds(0,0,603,680);
         this.getContentPane().add(background);
 
@@ -233,13 +272,25 @@ public class GameFrame extends JFrame implements KeyListener, ActionListener {
             //删除所有图片
             this.getContentPane().removeAll();
             //加载完整图片
-            JLabel all = new JLabel(new ImageIcon(imagePath+"all.jpg"));
+            BufferedImage allBuf = null;
+            try {
+                allBuf = ImageIO.read(GameFrame.class.getResourceAsStream("/" + imagePath + "all.jpg"));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            JLabel all = new JLabel(new ImageIcon(allBuf));
             //设置完整图片的位置
             all.setBounds(91,130,420,420);
             //添加完整图片到窗口
             this.getContentPane().add(all);
             //添加背景图片
-            JLabel background = new JLabel(new ImageIcon("JigsawGame/image/sport/background.jpg"));
+            BufferedImage bgBufA = null;
+            try {
+                bgBufA = ImageIO.read(GameFrame.class.getResourceAsStream("/JigsawGame/image/sport/background.jpg"));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            JLabel background = new JLabel(new ImageIcon(bgBufA));
             //设置背景图片的位置
             background.setBounds(0,0,603,680);
             //添加背景图片到窗口
@@ -382,10 +433,22 @@ public class GameFrame extends JFrame implements KeyListener, ActionListener {
             //设置弹窗标题
             dialog.setTitle("Gitee");
             //设置弹窗图标
-            dialog.setIconImage(Toolkit.getDefaultToolkit().getImage("JigsawGame/image/sport/Icon.png"));
+            BufferedImage dialogIconBuf = null;
+            try {
+                dialogIconBuf = ImageIO.read(GameFrame.class.getResourceAsStream("/JigsawGame/image/sport/Icon.png"));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            dialog.setIconImage(dialogIconBuf);
             //创建一个图片容器
             dialog.setModal(true);
-            JLabel label = new JLabel(new ImageIcon("JigsawGame/image/sport/about.png"));
+            BufferedImage aboutBuf = null;
+            try {
+                aboutBuf = ImageIO.read(GameFrame.class.getResourceAsStream("/JigsawGame/image/sport/about.png"));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            JLabel label = new JLabel(new ImageIcon(aboutBuf));
             //设置图片容器的位置和大小
             label.setBounds(0,0,380,560);
             //将图片容器添加到弹窗中

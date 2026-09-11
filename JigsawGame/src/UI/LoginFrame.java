@@ -1,9 +1,12 @@
 package UI;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class LoginFrame extends JFrame implements ActionListener {
@@ -37,7 +40,13 @@ public class LoginFrame extends JFrame implements ActionListener {
         //设置窗口标题
         this.setTitle("登录");
         //设置窗口图标
-        this.setIconImage(Toolkit.getDefaultToolkit().getImage("JigsawGame/image/sport/Icon.png"));
+        BufferedImage frameIconBuf = null;
+        try {
+            frameIconBuf = ImageIO.read(GameFrame.class.getResourceAsStream("/JigsawGame/image/sport/Icon.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        this.setIconImage(frameIconBuf);
         //设置窗口大小
         this.setSize(488,430);
         //设置窗口置顶
@@ -110,7 +119,14 @@ public class LoginFrame extends JFrame implements ActionListener {
         login.addActionListener(this);
 
         //添加窗口背景图片
-        JLabel background = new JLabel(new ImageIcon("JigsawGame/image/sport/background.jpg"));
+        BufferedImage bgBuf = null;
+        try {
+            bgBuf = ImageIO.read(GameFrame.class.getResourceAsStream("/JigsawGame/image/sport/background.jpg"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        JLabel background = new JLabel(new ImageIcon(bgBuf));
+        //设置背景图片位置
         background.setBounds(0, 0, 488, 430);
         this.getContentPane().add(background);
     }
