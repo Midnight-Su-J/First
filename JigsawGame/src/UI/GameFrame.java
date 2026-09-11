@@ -3,13 +3,13 @@ package UI;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.net.URL;
 import java.util.Random;
 
-public class GameFrame extends JFrame implements KeyListener {
+public class GameFrame extends JFrame implements KeyListener, ActionListener {
     //创建一个二维数组，用于存储图片序号
     int[][] data = new int[4][4];
     //定义两个变量，用于记录空白块的位置
@@ -24,6 +24,18 @@ public class GameFrame extends JFrame implements KeyListener {
             {9,10,11,12},
             {13,14,15,16}
     };
+    //定义一个变量，用于记录步数
+    int step = 0;
+    //创建菜单栏选项的条目（功能：重新开始、重新登录、退出游戏;关于：联系）
+    JMenuItem replayItem = new JMenuItem("重新开始");
+    JMenuItem reloginItem = new JMenuItem("重新登录");
+    JMenuItem exitItem = new JMenuItem("退出游戏");
+
+    JMenuItem contactItem = new JMenuItem("联系");
+
+    //创建更换图片选项的条目
+    JMenuItem ACG01Item = new JMenuItem("ACG01");
+    JMenuItem ACG02Item = new JMenuItem("ACG02");
 
     public GameFrame() {
         //初始化游戏窗口
@@ -46,6 +58,8 @@ public class GameFrame extends JFrame implements KeyListener {
     private void initJFrame() {
         //设置窗口标题
         this.setTitle("拼图游戏");
+        //设置窗口图标
+        this.setIconImage(Toolkit.getDefaultToolkit().getImage("JigsawGame/image/sport/Icon.png"));
         //设置窗口大小
         this.setSize(603,680);
         //设置窗口置顶
@@ -72,23 +86,37 @@ public class GameFrame extends JFrame implements KeyListener {
         JMenu functionMenu = new JMenu("功能");
         JMenu aboutMenu = new JMenu("关于");
 
+        //在功能下新增更换图片选项
+        JMenu changeImage = new JMenu("更换图片");
+
         //添加菜单栏选项到菜单栏
         jMenuBar.add(functionMenu);
         jMenuBar.add(aboutMenu);
 
-        //创建菜单栏选项的条目（功能：重新游戏、重新登录、退出游戏;关于：联系）
-        JMenuItem replayItem = new JMenuItem("重新游戏");
-        JMenuItem reloginItem = new JMenuItem("重新登录");
-        JMenuItem exitItem = new JMenuItem("退出游戏");
+        //给条目添加事件监听器
+        replayItem.addActionListener(this);
+        reloginItem.addActionListener(this);
+        exitItem.addActionListener(this);
 
-        JMenuItem contactItem = new JMenuItem("联系");
+        contactItem.addActionListener(this);
 
-        //添加菜单栏选项的条目到菜单栏选项
+        //给更换图片选项的条目添加事件监听器
+        ACG01Item.addActionListener(this);
+        ACG02Item.addActionListener(this);
+
+        //添加更换图片选项到功能菜单
+        functionMenu.add(changeImage);
+
+        //添加功能选项的条目到功能选项
         functionMenu.add(replayItem);
         functionMenu.add(reloginItem);
         functionMenu.add(exitItem);
 
         aboutMenu.add(contactItem);
+
+        //把ACG01、ACG02添加到更换图片选项中
+        changeImage.add(ACG01Item);
+        changeImage.add(ACG02Item);
     }
 
     private void initData() {
@@ -138,6 +166,15 @@ public class GameFrame extends JFrame implements KeyListener {
             winImage.setBounds(45,65,510,550);
             this.getContentPane().add(winImage);
         }
+
+        //创建JLabel的对象，用于显示步数
+        JLabel stepcount = new JLabel("步数："+step);
+        //设置步数标签颜色、字体和大小：白色，黑体加粗，20号
+        stepcount.setForeground(Color.WHITE);
+        stepcount.setFont(new Font("黑体", Font.BOLD, 20));
+        //设置步数标签位置
+        stepcount.setBounds(50,60,100,20);
+        this.getContentPane().add(stepcount);
 
         //加载图片
         for(int i = 0; i<4; i++){
@@ -233,6 +270,8 @@ public class GameFrame extends JFrame implements KeyListener {
             data[x][y+1] = 16;
             //更新空白块儿的角标
             y++;
+            //步数增加1
+            step++;
             //刷新图片
             initImage();
         }else if(keyCode == KeyEvent.VK_UP){
@@ -246,6 +285,8 @@ public class GameFrame extends JFrame implements KeyListener {
             data[x+1][y] = 16;
             //更新空白块儿的角标
             x++;
+            //步数增加1
+            step++;
             //刷新图片
             initImage();
         }else if(keyCode == KeyEvent.VK_RIGHT){
@@ -259,6 +300,8 @@ public class GameFrame extends JFrame implements KeyListener {
             data[x][y-1] = 16;
             //更新空白块儿的角标
             y--;
+            //步数增加1
+            step++;
             //刷新图片
             initImage();
         }else if(keyCode == KeyEvent.VK_DOWN){
@@ -272,6 +315,8 @@ public class GameFrame extends JFrame implements KeyListener {
             data[x-1][y] = 16;
             //更新空白块儿的角标
             x--;
+            //步数增加1
+            step++;
             //刷新图片
             initImage();
         }else if (keyCode == KeyEvent.VK_A){
@@ -303,5 +348,77 @@ public class GameFrame extends JFrame implements KeyListener {
             }
         }
         return true;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        //获取当前点击的菜单选项条目
+        JMenuItem menuItem = (JMenuItem) e.getSource();
+        //判断点击的是哪个条目
+        if(menuItem == replayItem){
+            //重新游戏
+            System.out.println("点击了重新开始");
+            //将步数重置为0
+            step = 0;
+            //再次打乱二维数组
+            initData();
+            //刷新图片
+            initImage();
+        }else if(menuItem == reloginItem){
+            //重新登录
+            System.out.println("点击了重新登录");
+            //隐藏当前窗口，显示登录窗口
+            this.setVisible(false);
+            new LoginFrame();
+        }else if(menuItem == exitItem){
+            //退出游戏
+            System.out.println("点击了退出游戏");
+            System.exit(0);
+        }else if(menuItem == contactItem){
+            //联系
+            System.out.println("点击了联系");
+            //创建弹窗
+            JDialog dialog = new JDialog();
+            //设置弹窗标题
+            dialog.setTitle("Gitee");
+            //设置弹窗图标
+            dialog.setIconImage(Toolkit.getDefaultToolkit().getImage("JigsawGame/image/sport/Icon.png"));
+            //创建一个图片容器
+            dialog.setModal(true);
+            JLabel label = new JLabel(new ImageIcon("JigsawGame/image/sport/about.png"));
+            //设置图片容器的位置和大小
+            label.setBounds(0,0,380,560);
+            //将图片容器添加到弹窗中
+            dialog.add(label);
+            //设置弹窗大小
+            dialog.setSize(380,560);
+            //设置弹窗位置
+            dialog.setLocationRelativeTo(null);
+            //设置弹框不关闭则不能操作其他窗口
+            dialog.setModal(true);
+            //设置弹窗可见
+            dialog.setVisible(true);
+        }else if(menuItem == ACG01Item){
+            //更换图片为ACG01
+            System.out.println("点击了更换图片为ACG01");
+            //将步数重置为0
+            step = 0;
+            //再次打乱二维数组
+            initData();
+            //将图片路径设置为ACG01的图片
+            imagePath = "JigsawGame/image/ACG/ACG01/";
+            //刷新图片
+            initImage();
+        }else if(menuItem == ACG02Item){
+            //更换图片为ACG02
+            System.out.println("点击了更换图片为ACG02");
+            imagePath = "JigsawGame/image/ACG/ACG02/";
+            //将步数重置为0
+            step = 0;
+            //再次打乱二维数组
+            initData();
+            //刷新图片
+            initImage();
+        }
     }
 }
