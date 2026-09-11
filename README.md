@@ -51,8 +51,8 @@
 
 ## PS
 
-ImageCutUtil.java用来制作游戏图片
-将jpg图片裁剪为420*420，并分为4*4的16份
+- ImageCutUtil.java用来制作游戏图片
+- 将jpg图片裁剪为420*420，并分为4*4的16份
 
 
 
