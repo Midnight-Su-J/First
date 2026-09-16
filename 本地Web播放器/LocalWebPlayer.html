@@ -186,7 +186,7 @@
         }
         #videoSearch::placeholder { color: rgba(255, 255, 255, .55); }
         #videoSearch:focus { border-color: #23ade5; }
-        #folderBtn {
+        #folderBtn, #nativeFolderBtn {
             flex: none;
             padding: 9px 16px;
             border: 1px solid rgba(255, 255, 255, .35);
@@ -198,7 +198,7 @@
             backdrop-filter: blur(8px);
             transition: all .2s;
         }
-        #folderBtn:hover { background: #23ade5; border-color: #23ade5; }
+        #folderBtn:hover, #nativeFolderBtn:hover { background: #23ade5; border-color: #23ade5; }
         /* 当前媒体目录路径 */
         .current-path {
             flex: none;
@@ -476,9 +476,12 @@
             <div id="player"></div>
             <div class="btn-row">
                 <button id="fileBtn" type="button">选择视频文件</button>
+                <button id="nativeFileBtn" type="button">选择本地文件</button>
                 <button id="remuxBtn" type="button">ffmpeg 封装</button>
                 <input type="file" id="remuxInput" class="sr-only"
                        accept=".mp4,.ts,.m2ts,.mts,.mkv,.flv,.avi,.mov,.wmv,.m4v,.webm,.ogv,video/*">
+                <input type="file" id="nativeFileInput" class="sr-only"
+                       accept=".mp4,.m4v,.webm,.ogv,.ogg,.mkv,video/*">
             </div>
             <div class="now-playing" id="nowPlaying" title=""></div>
             <div class="remux-msg" id="remuxStatus"></div>
@@ -488,6 +491,8 @@
     <section class="screen2">
         <div class="search-bar">
             <button id="folderBtn" type="button">选择文件夹</button>
+            <button id="nativeFolderBtn" type="button">选择本地文件夹</button>
+            <input type="file" id="nativeFolderInput" class="sr-only" webkitdirectory>
             <input type="search" id="videoSearch" placeholder="搜索当前文件夹里的视频…" autocomplete="off">
             <span id="searchCount"></span>
         </div>
@@ -731,8 +736,21 @@
         // 因此改为打开服务端目录浏览器（文件模式）：
         // 点选某个视频后，媒体目录一并切换到它所在的文件夹，下方列表同步。
         var fileBtn = document.getElementById('fileBtn');
-        var currentObjectUrl = null; // 预留：临时 blob 地址（当前流程不再产生）
+        var currentObjectUrl = null; // 原生 File 播放时的临时 blob 地址
         fileBtn.addEventListener('click', function () { openFileModal(); });
+
+        // ===== 本地选择文件（浏览器原生文件框，file:// 直开也可用） =====
+        // 浏览器安全限制拿不到文件完整路径，但原生文件框返回的 File 对象
+        // 可以转成 blob: 地址直接交给播放器，无需任何后端。
+        var nativeFileBtn = document.getElementById('nativeFileBtn');
+        var nativeFileInput = document.getElementById('nativeFileInput');
+        nativeFileBtn.addEventListener('click', function () { nativeFileInput.click(); });
+        nativeFileInput.addEventListener('change', function () {
+            var file = this.files[0];
+            this.value = ''; // 允许重复选择同一个文件
+            if (!file) return;
+            playItem({ name: file.name, title: titleOf(file.name), url: null, nativeFile: file });
+        });
 
         // ===== ffmpeg 无损转封装（系统文件框选视频，成品输出到当前视频列表目录） =====
         var remuxBtn = document.getElementById('remuxBtn');
@@ -783,6 +801,89 @@
                 });
         });
 
+        // ===== file:// 模式：原生选择的视频列表与客户端缩略图 =====
+        // file:// 下没有 ffmpeg 后端，改用隐藏 <video> 抽帧画到 canvas 生成封面。
+        var NATIVE_VIDEO_EXTS = ['.mp4', '.m4v', '.webm', '.ogv', '.ogg', '.mkv'];
+        // blob: 方式无法解析 HLS 播放列表，因此不含 .m3u8
+
+        function extOf(name) {
+            var i = name.lastIndexOf('.');
+            return i === -1 ? '' : name.slice(i).toLowerCase();
+        }
+
+        var thumbQueue = [];      // 待生成缩略图的 item 队列
+        var thumbRunning = 0;     // 并发上限 2，避免大量视频同时解码占满资源
+        var THUMB_MAX_PARALLEL = 2;
+
+        function queueNativeThumb(item, img, cover) {
+            (item._thumbImgs = item._thumbImgs || []).push({ img: img, cover: cover });
+            if (item._queued) return;
+            item._queued = true;
+            thumbQueue.push(item);
+            pumpNativeThumbs();
+        }
+
+        function pumpNativeThumbs() {
+            while (thumbRunning < THUMB_MAX_PARALLEL && thumbQueue.length) {
+                var item = thumbQueue.shift();
+                if (item._thumbData) { deliverNativeThumb(item); continue; }
+                thumbRunning++;
+                genNativeThumb(item.nativeFile, function (it) {
+                    return function (dataUrl) {
+                        thumbRunning--;
+                        if (dataUrl) {
+                            it._thumbData = dataUrl;
+                            deliverNativeThumb(it);
+                        } else {
+                            it._thumbImgs.forEach(function (r) {
+                                r.cover.classList.add('cover-failed');
+                            });
+                        }
+                        pumpNativeThumbs();
+                    };
+                }(item));
+            }
+        }
+
+        function deliverNativeThumb(item) {
+            item._thumbImgs.forEach(function (r) { r.img.src = item._thumbData; });
+        }
+
+        function genNativeThumb(file, cb) {
+            var url = URL.createObjectURL(file);
+            var v = document.createElement('video');
+            v.muted = true;
+            v.preload = 'metadata';
+            var done = false;
+            var timer = setTimeout(function () { finish(null); }, 8000);
+            function finish(dataUrl) {
+                if (done) return;
+                done = true;
+                clearTimeout(timer);
+                URL.revokeObjectURL(url);
+                v.removeAttribute('src');
+                try { v.load(); } catch (e) {}
+                cb(dataUrl);
+            }
+            v.addEventListener('error', function () { finish(null); });
+            v.addEventListener('loadedmetadata', function () {
+                // 优先取 3s 处画面（避开开头黑屏）；短视频取中间
+                var d = v.duration;
+                var t = (isFinite(d) && d > 0) ? Math.min(3, d / 2) : 3;
+                try { v.currentTime = t; } catch (e) { finish(null); }
+            });
+            v.addEventListener('seeked', function () {
+                try {
+                    var c = document.createElement('canvas');
+                    c.width = 480;
+                    c.height = Math.max(1, Math.round(v.videoHeight * 480 / v.videoWidth) || 270);
+                    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+                    finish(c.toDataURL('image/jpeg', 0.75));
+                } catch (e) { finish(null); }
+            });
+            v.src = url;
+        }
+
         // ===== 第二屏：当前媒体目录的视频列表 + 搜索 =====
         var videoItems = [];
         var mediaPath = '';
@@ -792,11 +893,17 @@
         var videoGrid = document.getElementById('videoGrid');
         var currentPathEl = document.getElementById('currentPath');
 
-        // 统一播放入口：释放“选择视频文件”的临时地址 → 切换 → 更新标题 → 滚回顶部
+        // 统一播放入口：原生 File 现场生成 blob 地址 → 释放旧地址 → 切换 → 更新标题 → 滚回顶部
         function playItem(item) {
+            if (item.nativeFile && !item.url) {
+                item.url = URL.createObjectURL(item.nativeFile);
+            }
             if (currentObjectUrl) {
                 URL.revokeObjectURL(currentObjectUrl);
                 currentObjectUrl = null;
+            }
+            if (item.url && item.url.indexOf('blob:') === 0) {
+                currentObjectUrl = item.url; // 记录下来，下次播放前释放
             }
             art.switchUrl(item.url);
             setNowPlaying(item.title);
@@ -827,15 +934,23 @@
                         + 'v=' + (window.__thumbVersion || 0)
                         + '&t=' + retry;
                 }
-                thumb.addEventListener('error', function () {
-                    if (retry < 8) {
-                        retry++;
-                        setTimeout(setSrc, 600);
-                    } else {
-                        cover.classList.add('cover-failed');
-                    }
-                });
-                setSrc();
+                if (item.thumb) {
+                    // 服务端模式：静态 .jpg，首次可能还在后台生成（404），自动重试
+                    thumb.addEventListener('error', function () {
+                        if (retry < 8) {
+                            retry++;
+                            setTimeout(setSrc, 600);
+                        } else {
+                            cover.classList.add('cover-failed');
+                        }
+                    });
+                    setSrc();
+                } else if (item.nativeFile) {
+                    // file:// 模式：客户端抽帧生成缩略图
+                    queueNativeThumb(item, thumb, cover);
+                } else {
+                    cover.classList.add('cover-failed');
+                }
 
                 // 标题：保留前缀名
                 var label = document.createElement('div');
@@ -886,7 +1001,22 @@
 
         searchInput.addEventListener('input', applyFilter);
 
+        // 释放当前列表里原生 File 的 blob 地址（切换列表时调用，避免内存泄漏）
+        function releaseNativeItems() {
+            if (currentObjectUrl) {
+                URL.revokeObjectURL(currentObjectUrl);
+                currentObjectUrl = null;
+            }
+            videoItems.forEach(function (it) {
+                if (it.nativeFile && it.url) {
+                    URL.revokeObjectURL(it.url);
+                    it.url = null;
+                }
+            });
+        }
+
         function setVideoList(data, autoPlayFirst) {
+            releaseNativeItems();
             mediaPath = data.path || '';
             currentPathEl.textContent = mediaPath;
             currentPathEl.title = mediaPath;
@@ -1096,7 +1226,50 @@
             });
         });
 
-        loadVideos(false); // 初始加载只填列表，播放器保持为空
+        // ===== 本地选择文件夹（webkitdirectory 原生目录框，file:// 直开也可用） =====
+        // 原生目录框会递归返回文件夹下所有文件，这里只取第一层的视频，
+        // 与服务端“当前目录列表”的行为保持一致。
+        var nativeFolderBtn = document.getElementById('nativeFolderBtn');
+        var nativeFolderInput = document.getElementById('nativeFolderInput');
+        nativeFolderBtn.addEventListener('click', function () { nativeFolderInput.click(); });
+        nativeFolderInput.addEventListener('change', function () {
+            // 先筛出目标文件（File 对象引用独立存在），再清空 input 以便重复选择
+            var files = Array.prototype.filter.call(this.files, function (f) {
+                var rel = f.webkitRelativePath || '';
+                // "文件夹/文件.mp4" 只有 1 个斜杠 → 第一层；更深层跳过
+                return rel.indexOf('/') === rel.lastIndexOf('/') &&
+                       NATIVE_VIDEO_EXTS.indexOf(extOf(f.name)) !== -1;
+            });
+            this.value = '';
+            if (!files.length) {
+                showRemuxMsg('该文件夹第一层没有可直接播放的视频', 'err');
+                return;
+            }
+            releaseNativeItems(); // 释放旧列表的 blob 地址
+            var rel0 = files[0].webkitRelativePath || '';
+            var folderName = rel0.indexOf('/') !== -1 ? rel0.split('/')[0] : '本地文件夹';
+            mediaPath = folderName;
+            currentPathEl.style.display = '';
+            currentPathEl.textContent = folderName;
+            currentPathEl.title = folderName;
+            videoItems = files.map(function (f) {
+                return { name: f.name, title: titleOf(f.name), url: null, thumb: null, nativeFile: f };
+            });
+            renderGrid();
+            showRemuxMsg('已加载本地文件夹：' + folderName + '（' + files.length + ' 个视频）', 'ok');
+        });
+
+        // ===== file:// 直开模式：没有后端，隐藏依赖服务端的入口 =====
+        var IS_FILE = location.protocol === 'file:';
+        if (IS_FILE) {
+            fileBtn.style.display = 'none';   // 服务端目录浏览器（需 /api/browse）
+            document.getElementById('folderBtn').style.display = 'none';
+            remuxBtn.style.display = 'none';  // 依赖 /api/remux
+            currentPathEl.style.display = 'none';
+            emptyTip.textContent = '请点击“本地选择文件夹”或“本地选择文件”添加视频';
+        } else {
+            loadVideos(false); // 初始加载只填列表，播放器保持为空
+        }
     </script>
 </body>
 </html>
