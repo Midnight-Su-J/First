@@ -203,9 +203,9 @@ Chouqian/
 
 将照片放入 `src/main/resources/Image/list/` 文件夹，**文件名前缀即为姓名**（例如 `张三.png` → 姓名"张三"）。支持 `.jpg`、`.jpeg`、`.png`、`.gif` 格式。程序下次启动时自动重新生成 `list.csv`，无需手动编辑。
 
-# 🐍 贪吃蛇 - C++
+# 🐍 贪吃蛇 - C
 
-基于Windows控制台API用C++实现的经典贪吃蛇小游戏。
+基于Windows控制台API用C语言实现的经典贪吃蛇小游戏。
 
 ## 功能特性
 
